@@ -6,12 +6,7 @@ from string import ascii_lowercase
 from typing import Callable
 
 """
-Provides a command-line calculator with support for arbitrarily extensible constants and single-parameter functions. Parenthetical logic (i.e., expression nested) is appropriately accounted for.
-
-NOTE:
-1. Functions names MUST be written in lowercase alphabetical script, and underscores are optional.
-2. Constants MUST be written in uppercase alphabetical script.
-3. Be way of how operator translations (e.g., "x" -> "*") can affect your constants and functions.
+Provides a command-line calculator with support for extensible constants and single-parameter functions. Handles nested parentheses properly.
 """
 
 FN_ALPHABET = set(ascii_lowercase).union(set(["_"]))
@@ -24,10 +19,15 @@ CONSTANTS: dict[str, str] = {
 }
 
 OPERATORS: dict[str, str] = {
-   "^": "**",
-   "X": "*",
+    "^": "**",
+    "X": "*",
 }
 
+"""
+1. Functions names must be written in lowercase alphabetical script, and underscores are optional.
+2. Constants must be written in uppercase alphabetical script.
+3. Be aware of how syntactic-sugar translations (e.g., "x" -> "*") can affect your constants and functions.
+"""
 FUNCTIONS: dict[str, Callable[[float | int], float]] = {
     "log": math.log,
     "log_two": math.log2,
@@ -39,16 +39,20 @@ FUNCTIONS: dict[str, Callable[[float | int], float]] = {
 }
 
 class StringBuilder:
+    """Efficiently builds strings using a list of substrings."""
     def __init__(self) -> None:
         self.strings: list[str] = []
 
     def build_string(self) -> str:
+        """Returns the concatenated string."""
         return "".join(self.strings)
 
     def add(self, string: str) -> None:
+        """Adds a substring to the builder."""
         self.strings.append(string)
 
 def verify_parentheses_use(exp: str) -> None:
+    """Checks for balanced parentheses in the expression."""
     stack = 0
     for c in exp:
         if c == LEFT_PAREN:
@@ -62,16 +66,19 @@ def verify_parentheses_use(exp: str) -> None:
         raise Exception("Unmatched parentheses.")
 
 def replace_with_dict(exp: str, d) -> str:
+    """Replaces substrings in the expression based on a dictionary."""
     for to_replace, replacement in d.items():
         exp = exp.replace(to_replace, replacement)
     return exp
 
 def replace_constants_and_operators(exp: str) -> str:
+    """Replaces constants and operators in the expression."""
     exp = replace_with_dict(exp, OPERATORS)
     exp = replace_with_dict(exp, CONSTANTS)
     return exp
 
 def make_implicit_multiplication_explicit(exp: str) -> str:
+    """Adds explicit multiplication for cases like '2(3)' or ')3'."""
     exp = exp.replace(")(", ")*(")
 
     new_exp: StringBuilder = StringBuilder()
@@ -84,36 +91,35 @@ def make_implicit_multiplication_explicit(exp: str) -> str:
     return new_exp.build_string()
                 
 def remove_syntactic_sugar(exp: str) -> str:
+    """Applies replacements and formatting to normalize the expression."""
     exp = replace_constants_and_operators(exp)
     exp = make_implicit_multiplication_explicit(exp)
     return exp
 
 def get_function(fn_name: str) -> Callable[[float|int], float]:
+    """Returns a function by name, ensuring it only contains valid characters."""
     for c in fn_name:
         if c not in FN_ALPHABET:
-            raise Exception(f"Expected function name with only lowercase, alphabetical letters and underscores but found {c} in {fn_name}.")
+            raise Exception(f"Invalid character {c} in function name {fn_name}.")
     
     if fn_name not in FUNCTIONS:
-        raise Exception(f"{fn_name} not found in FUNCTIONS keys: {list(FUNCTIONS.keys())}.")
-    else:
-        return FUNCTIONS[fn_name]
+        raise Exception(f"Function {fn_name} not found.")
+    return FUNCTIONS[fn_name]
 
 def advance_to_function_end(exp: str, i: int) -> int:
+    """Advances to the end of the function name and checks for '('."""
     if exp[i] not in FN_ALPHABET:
-       raise Exception(f"Expected function name start at index {i} of expression but instead found {exp[i]} in {exp}.")
-
+       raise Exception(f"Expected function name at index {i}.")
     while exp[i] in FN_ALPHABET:
         i += 1
-
     if exp[i] != LEFT_PAREN:
-        raise Exception(f"Expected \"(\" to border end of function name but instead found {exp[i]}.")
-
+        raise Exception(f"Expected '(' after function name at index {i}.")
     return i
 
 def advance_to_closed_parenthesis(exp: str, i: int) -> int:
+    """Advances to the closing parenthesis, ensuring matching parentheses."""
     if exp[i] != LEFT_PAREN:
-        raise Exception(f"Expected index {i} to point to left parenthesis but index {i} points to {exp[i]} in {exp}.")
-
+        raise Exception(f"Expected '(' at index {i}.")
     stack: list[str] = [exp[i]]
     while stack and i < len(exp):
         i += 1
@@ -121,13 +127,12 @@ def advance_to_closed_parenthesis(exp: str, i: int) -> int:
             stack.pop()
         elif exp[i] == LEFT_PAREN:
             stack.append(LEFT_PAREN)
-
     if i >= len(exp) and stack:
-        raise Exception(f"Non-exhausted initial left-parenthesis in {exp[i:]}.")
-
+        raise Exception("Unmatched left parenthesis.")
     return i
 
 def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
+    """Evaluates the expression recursively, applying functions if found."""
     new_exp: StringBuilder = StringBuilder()
     to_add: str | None = None
 
@@ -143,7 +148,7 @@ def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
             to_add = evaluate(exp[j+1:e], fn)
             i: int = e
         elif vanilla_parentheses:
-            e: int =  advance_to_closed_parenthesis(exp, i)
+            e: int = advance_to_closed_parenthesis(exp, i)
             to_add = evaluate(exp[i+1:e])
             i: int = e
         else:
@@ -157,6 +162,7 @@ def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
     return str(y)
 
 def main() -> None:
+    """Main entry point for the calculator. Processes command-line input."""
     if len(sys.argv) != 2 or sys.argv[1] == "":
         print("Usage: mcal \"<expression>\"")
         return
@@ -167,3 +173,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
