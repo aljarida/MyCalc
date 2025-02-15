@@ -39,19 +39,6 @@ FUNCTIONS: dict[str, Callable[[float | int], float]] = {
     "fac": (lambda x: math.factorial(int(x)))
 }
 
-class StringBuilder:
-    """Efficiently builds strings using a list of substrings."""
-    def __init__(self) -> None:
-        self.strings: list[str] = []
-
-    def build_string(self) -> str:
-        """Returns the concatenated string."""
-        return "".join(self.strings)
-
-    def add(self, string: str) -> None:
-        """Adds a substring to the builder."""
-        self.strings.append(string)
-
 def verify_parentheses_use(exp: str) -> None:
     """Checks for balanced parentheses in the expression."""
     msg = "Unbalanced parentheses."
@@ -83,14 +70,14 @@ def make_implicit_multiplication_explicit(exp: str) -> str:
     """Adds explicit multiplication for cases like '2(3)' or ')3'."""
     exp = exp.replace(")(", ")*(")
 
-    new_exp: StringBuilder = StringBuilder()
+    new_exp: list[str] = []
     for i, c in enumerate(exp):
         if i > 0 and ((exp[i-1].isdigit() and c == LEFT_PAREN) or
                       (exp[i-1] == RIGHT_PAREN and c.isdigit())):
-            new_exp.add("*")
-        new_exp.add(c)
+            new_exp.append("*")
+        new_exp.append(c)
 
-    return new_exp.build_string()
+    return "".join(new_exp)
                 
 def remove_syntactic_sugar(exp: str) -> str:
     """Applies replacements and formatting to normalize the expression."""
@@ -136,7 +123,7 @@ def advance_to_closed_parenthesis(exp: str, i: int) -> int:
 
 def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
     """Evaluates the expression recursively, applying functions if found."""
-    new_exp: StringBuilder = StringBuilder()
+    new_exp: list[str] = []
     to_add: str | None = None
 
     i: int = 0
@@ -157,10 +144,10 @@ def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
         else:
             to_add = exp[i]
 
-        new_exp.add(to_add)
+        new_exp.append(to_add)
         i += 1
   
-    x: int | float = eval(new_exp.build_string())
+    x: int | float = eval("".join(new_exp))
     y: int | float = fn_to_apply(x)
     return str(y)
 
