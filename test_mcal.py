@@ -47,15 +47,11 @@ class CLITester(McalTester):
         result = self.mcal_result_for("1280X720")
         self.assertEqual(result, 1280*720)
 
-    def test_no_arguments(self):
-        result = self.mcal_result_for("", to_float=False)
-        self.assertEqual(result, "Usage: mcal \"<expression>\"\n")
-
     def test_many_arguments(self):
-        sys.argv = ["./mcal", "5+5", "10+10"]
+        sys.argv = ["./mcal", "(5+5", "(10)", ")", "/5"]
         mcal.main()
         result = sys.stdout.getvalue()
-        self.assertEqual(result, "Usage: mcal \"<expression>\"\n")
+        self.assertEqual(result, "11.0\n")
 
 class FunctionsTester(unittest.TestCase):
     def test_replace_with_dict(self):

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import sys
 import math
 from string import ascii_lowercase
@@ -162,28 +163,44 @@ def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
     y: int | float = fn_to_apply(x)
     return str(y)
 
+def substitute_registers(exp: str) -> str:
+    def _substitute_registers(match):
+        n: int = int(match.group(1))
+        value: str = registers[-n]
+        return value
+    return re.sub(r"\$(\d+)", _substitute_registers, exp)
+
+
 def evaluate_prime(exp: str) -> str:
-    desugared_exp: str = remove_syntactic_sugar(exp) 
-    return evaluate(desugared_exp)
+    desugared_exp: str = remove_syntactic_sugar(exp)
+    deregistered_exp: str = substitute_registers(desugared_exp)
+    return evaluate(deregistered_exp)
+
+registers: list[str] = []
 
 def main() -> None:
     """Main entry point for the calculator. Processes command-line input."""
-    if len(sys.argv) > 2:
-        print("Provide no arguments to enter REPL; one argument to evaluate directly.")
-    elif len(sys.argv) == 2 and sys.argv[1] != "":
-        result = evaluate_prime(sys.argv[1])
+    exp = str | None 
+    if len(sys.argv) >= 2:
+        exp = "".join(sys.argv[1:])
+        result = evaluate_prime(exp)
         print(result)
     else:
         inp: str = ""
-        print("Enter 'q' to quit. Otherwise, enter expressions for calculation.")
-        while inp != "q":
-            inp = input("Evaluate: ")
-            
+        count: int = 1
+        print("Enter 'q' to quit.")
+        while True:
+            inp = input(f"({count}) ~ ")
             if not inp:
                 print("Please enter a non-empty expression.")
                 continue
-
-            result: str = evaluate_prime(inp)
+            elif inp == "q" or inp == "Q":
+                break
+            else:
+                result: str = evaluate_prime(inp)
+                registers.append(result)
+                count += 1
+                print(result)
 
 if __name__ == "__main__":
     main()
