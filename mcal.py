@@ -104,6 +104,7 @@ def get_function(fn_name: str) -> Callable[[float|int], float]:
     
     if fn_name not in FUNCTIONS:
         raise Exception(f"Function {fn_name} not found.")
+
     return FUNCTIONS[fn_name]
 
 def advance_to_function_end(exp: str, i: int) -> int:
