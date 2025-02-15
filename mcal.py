@@ -162,15 +162,28 @@ def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
     y: int | float = fn_to_apply(x)
     return str(y)
 
+def evaluate_prime(exp: str) -> str:
+    desugared_exp: str = remove_syntactic_sugar(exp) 
+    return evaluate(desugared_exp)
+
 def main() -> None:
     """Main entry point for the calculator. Processes command-line input."""
-    if len(sys.argv) != 2 or sys.argv[1] == "":
-        print("Usage: mcal \"<expression>\"")
-        return
-    exp: str = "".join(sys.argv[1:])
-    exp: str = remove_syntactic_sugar(exp) 
-    result: str = evaluate(exp)
-    print(result)
+    if len(sys.argv) > 2:
+        print("Provide no arguments to enter REPL; one argument to evaluate directly.")
+    elif len(sys.argv) == 2 and sys.argv[1] != "":
+        result = evaluate_prime(sys.argv[1])
+        print(result)
+    else:
+        inp: str = ""
+        print("Enter 'q' to quit. Otherwise, enter expressions for calculation.")
+        while inp != "q":
+            inp = input("Evaluate: ")
+            
+            if not inp:
+                print("Please enter a non-empty expression.")
+                continue
+
+            result: str = evaluate_prime(inp)
 
 if __name__ == "__main__":
     main()
