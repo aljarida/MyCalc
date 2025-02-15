@@ -6,9 +6,9 @@ import math
 from string import ascii_lowercase
 from typing import Callable
 
-"""
-Provides a command-line calculator with support for extensible constants and single-parameter functions. Handles nested parentheses properly.
-"""
+
+CLEAR_TOKENS = ["c", "clear", "clean", "wipe"]
+QUIT_TOKENS = ["q", "quit", "exit"]
 
 FN_ALPHABET = set(ascii_lowercase).union(set(["_"]))
 LEFT_PAREN = "("
@@ -54,6 +54,7 @@ class StringBuilder:
 
 def verify_parentheses_use(exp: str) -> None:
     """Checks for balanced parentheses in the expression."""
+    msg = "Unbalanced parentheses."
     stack = 0
     for c in exp:
         if c == LEFT_PAREN:
@@ -61,10 +62,10 @@ def verify_parentheses_use(exp: str) -> None:
         elif c == RIGHT_PAREN:
             stack -= 1
             if stack < 0:
-                raise Exception("Unmatched or poorly matched parentheses.")
+                raise Exception(msg)
 
     if stack != 0:
-        raise Exception("Unmatched parentheses.")
+        raise Exception(msg)
 
 def replace_with_dict(exp: str, d) -> str:
     """Replaces substrings in the expression based on a dictionary."""
@@ -166,41 +167,57 @@ def evaluate(exp: str, fn_to_apply=(lambda x: x)) -> str:
 def substitute_registers(exp: str) -> str:
     def _substitute_registers(match):
         n: int = int(match.group(1))
-        value: str = registers[-n]
+        value: str = registers[n-1]
         return value
     return re.sub(r"\$(\d+)", _substitute_registers, exp)
-
 
 def evaluate_prime(exp: str) -> str:
     desugared_exp: str = remove_syntactic_sugar(exp)
     deregistered_exp: str = substitute_registers(desugared_exp)
     return evaluate(deregistered_exp)
 
+def process_line() -> None:
+    exp: str = "".join(sys.argv[1:])
+    result = evaluate_prime(exp)
+    print(result)
+
+def clear_screen() -> None:
+    print("\033[H\033[J", end="")
+
+def repl() -> None:
+    clear_screen()
+    print("Enter 'q' to quit.")
+
+    count: int = 1
+    while True:
+        user_input = input(f"[{count}] ~ ")
+        if not user_input:
+            print("Please enter a non-empty expression.")
+            continue
+        elif user_input.lower() in CLEAR_TOKENS:
+            clear_screen()
+            continue
+        elif user_input.lower() in QUIT_TOKENS:
+            clear_screen()
+            break
+        
+        try:
+            result: str = evaluate_prime(user_input)
+            registers.append(result)
+            prefix: str = (len(str(count)) + 1) * " "
+            count += 1
+            print(prefix + " = " + result) 
+        except:
+            print("Error calculating.")
+
 registers: list[str] = []
 
 def main() -> None:
     """Main entry point for the calculator. Processes command-line input."""
-    exp = str | None 
     if len(sys.argv) >= 2:
-        exp = "".join(sys.argv[1:])
-        result = evaluate_prime(exp)
-        print(result)
+        process_line()
     else:
-        inp: str = ""
-        count: int = 1
-        print("Enter 'q' to quit.")
-        while True:
-            inp = input(f"({count}) ~ ")
-            if not inp:
-                print("Please enter a non-empty expression.")
-                continue
-            elif inp == "q" or inp == "Q":
-                break
-            else:
-                result: str = evaluate_prime(inp)
-                registers.append(result)
-                count += 1
-                print(result)
+        repl()
 
 if __name__ == "__main__":
     main()
