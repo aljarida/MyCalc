@@ -69,8 +69,8 @@ Enter 'q' to quit.
 # MyCalc exits
 ```
 
-**Added Features in the REPL:**
-- *Register variables:*
+**Added Usage in the REPL:**
+- **Register variables:**
   - Each result is saved as `$1`, `$2`, ... for that session.
   - Use `$N` in later calculations. Example:
       ```bash
@@ -79,8 +79,8 @@ Enter 'q' to quit.
       [2] ~ $1 * 3
             = 27
       ```    
-- *Clear screen:* Enter `c`, `clear`, `clean`, or `wipe`.
-- *Quit:* Enter `q`, `quit`, or `exit`.
+- **Clear screen:** Enter `c`, `clear`, `clean`, or `wipe`.
+- **Quit:** Enter `q`, `quit`, or `exit`.
 
 
 ## Supported Syntax
